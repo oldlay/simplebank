@@ -45,7 +45,7 @@ func RandomMoney(n int) string {
 		c := number[rand.Intn(k)]
 		s = append(s, c)
 	}
-	index := RandomInt(1, int64(n-1))
+	index := n - 2
 
 	s = append(s[:index], append([]byte{'.'}, s[index:]...)...)
 

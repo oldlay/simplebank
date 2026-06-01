@@ -123,11 +123,11 @@ func (server *Server) updateAccount(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
+
 	arg := db.UpdateAccountParams{
 		ID:      uri.ID,
 		Balance: req.Balance,
 	}
-
 	account, err := server.store.UpdateAccount(ctx, arg)
 	if err != nil {
 		if err == sql.ErrNoRows {

@@ -9,7 +9,38 @@ INSERT INTO users (
 )
 RETURNING *;
 
-
 -- name: GetUser :one
 SELECT * FROM users
 WHERE username = $1 LIMIT 1;
+
+/* 
+in sqlc how to conditionally update fields based on whether the input is null or not?
+*/
+-- name: UpdateUser :one
+-- use boolean way:
+-- UPDATE users
+-- SET 
+--   hashed_password = CASE
+--     WHEN @set_hashed_password::boolean = TRUE THEN @hashed_password
+--     ELSE hashed_password
+--   END,
+--   full_name = CASE
+--     WHEN @set_full_name::boolean = TRUE THEN @full_name
+--     ELSE full_name
+--   END,
+--   email = CASE
+--     WHEN @set_email::boolean = TRUE THEN @email
+--     ELSE email
+--   END
+-- WHERE 
+--   username = @username
+-- RETURNING *;
+
+UPDATE users
+SET 
+  hashed_password = COALESCE(sqlc.narg(hashed_password), hashed_password),
+  full_name = COALESCE(sqlc.narg(full_name), full_name),
+  email = COALESCE(sqlc.narg(email), email)
+WHERE 
+  username = sqlc.arg(username)
+RETURNING *;

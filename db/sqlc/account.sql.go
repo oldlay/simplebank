@@ -7,6 +7,8 @@ package db
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const addAccountBalance = `-- name: AddAccountBalance :one
@@ -17,12 +19,12 @@ RETURNING id, owner, balance, currency, created_at
 `
 
 type AddAccountBalanceParams struct {
-	Amount string `json:"amount"`
-	ID     int64  `json:"id"`
+	Amount pgtype.Numeric `json:"amount"`
+	ID     int64          `json:"id"`
 }
 
 func (q *Queries) AddAccountBalance(ctx context.Context, arg AddAccountBalanceParams) (Account, error) {
-	row := q.db.QueryRowContext(ctx, addAccountBalance, arg.Amount, arg.ID)
+	row := q.db.QueryRow(ctx, addAccountBalance, arg.Amount, arg.ID)
 	var i Account
 	err := row.Scan(
 		&i.ID,
@@ -46,13 +48,13 @@ RETURNING id, owner, balance, currency, created_at
 `
 
 type CreateAccountParams struct {
-	Owner    string `json:"owner"`
-	Balance  string `json:"balance"`
-	Currency string `json:"currency"`
+	Owner    string         `json:"owner"`
+	Balance  pgtype.Numeric `json:"balance"`
+	Currency string         `json:"currency"`
 }
 
 func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) (Account, error) {
-	row := q.db.QueryRowContext(ctx, createAccount, arg.Owner, arg.Balance, arg.Currency)
+	row := q.db.QueryRow(ctx, createAccount, arg.Owner, arg.Balance, arg.Currency)
 	var i Account
 	err := row.Scan(
 		&i.ID,
@@ -70,7 +72,7 @@ WHERE id = $1
 `
 
 func (q *Queries) DeleteAccount(ctx context.Context, id int64) error {
-	_, err := q.db.ExecContext(ctx, deleteAccount, id)
+	_, err := q.db.Exec(ctx, deleteAccount, id)
 	return err
 }
 
@@ -80,7 +82,7 @@ WHERE id = $1 LIMIT 1
 `
 
 func (q *Queries) GetAccount(ctx context.Context, id int64) (Account, error) {
-	row := q.db.QueryRowContext(ctx, getAccount, id)
+	row := q.db.QueryRow(ctx, getAccount, id)
 	var i Account
 	err := row.Scan(
 		&i.ID,
@@ -99,7 +101,7 @@ FOR NO KEY UPDATE
 `
 
 func (q *Queries) GetAccountForUpdate(ctx context.Context, id int64) (Account, error) {
-	row := q.db.QueryRowContext(ctx, getAccountForUpdate, id)
+	row := q.db.QueryRow(ctx, getAccountForUpdate, id)
 	var i Account
 	err := row.Scan(
 		&i.ID,
@@ -126,7 +128,7 @@ type ListAccountParams struct {
 }
 
 func (q *Queries) ListAccount(ctx context.Context, arg ListAccountParams) ([]Account, error) {
-	rows, err := q.db.QueryContext(ctx, listAccount, arg.Owner, arg.Limit, arg.Offset)
+	rows, err := q.db.Query(ctx, listAccount, arg.Owner, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -145,9 +147,6 @@ func (q *Queries) ListAccount(ctx context.Context, arg ListAccountParams) ([]Acc
 		}
 		items = append(items, i)
 	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -162,12 +161,12 @@ RETURNING id, owner, balance, currency, created_at
 `
 
 type UpdateAccountParams struct {
-	ID      int64  `json:"id"`
-	Balance string `json:"balance"`
+	ID      int64          `json:"id"`
+	Balance pgtype.Numeric `json:"balance"`
 }
 
 func (q *Queries) UpdateAccount(ctx context.Context, arg UpdateAccountParams) (Account, error) {
-	row := q.db.QueryRowContext(ctx, updateAccount, arg.ID, arg.Balance)
+	row := q.db.QueryRow(ctx, updateAccount, arg.ID, arg.Balance)
 	var i Account
 	err := row.Scan(
 		&i.ID,

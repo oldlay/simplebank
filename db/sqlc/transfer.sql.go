@@ -7,6 +7,8 @@ package db
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createTransfer = `-- name: CreateTransfer :one
@@ -21,13 +23,13 @@ RETURNING id, from_account_id, to_account_id, amount, created_at
 `
 
 type CreateTransferParams struct {
-	FromAccountID int64  `json:"from_account_id"`
-	ToAccountID   int64  `json:"to_account_id"`
-	Amount        string `json:"amount"`
+	FromAccountID int64          `json:"from_account_id"`
+	ToAccountID   int64          `json:"to_account_id"`
+	Amount        pgtype.Numeric `json:"amount"`
 }
 
 func (q *Queries) CreateTransfer(ctx context.Context, arg CreateTransferParams) (Transfer, error) {
-	row := q.db.QueryRowContext(ctx, createTransfer, arg.FromAccountID, arg.ToAccountID, arg.Amount)
+	row := q.db.QueryRow(ctx, createTransfer, arg.FromAccountID, arg.ToAccountID, arg.Amount)
 	var i Transfer
 	err := row.Scan(
 		&i.ID,
@@ -45,7 +47,7 @@ WHERE id = $1 LIMIT 1
 `
 
 func (q *Queries) GetTransfer(ctx context.Context, id int64) (Transfer, error) {
-	row := q.db.QueryRowContext(ctx, getTransfer, id)
+	row := q.db.QueryRow(ctx, getTransfer, id)
 	var i Transfer
 	err := row.Scan(
 		&i.ID,
@@ -75,7 +77,7 @@ type ListTransferParams struct {
 }
 
 func (q *Queries) ListTransfer(ctx context.Context, arg ListTransferParams) ([]Transfer, error) {
-	rows, err := q.db.QueryContext(ctx, listTransfer,
+	rows, err := q.db.Query(ctx, listTransfer,
 		arg.FromAccountID,
 		arg.ToAccountID,
 		arg.Limit,
@@ -98,9 +100,6 @@ func (q *Queries) ListTransfer(ctx context.Context, arg ListTransferParams) ([]T
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

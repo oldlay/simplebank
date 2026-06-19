@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 const minSecretKeySize = 32
@@ -23,8 +23,8 @@ func NewJWTMaker(secretKey string) (Maker, error) {
 	return &JWTMaker{secretKey}, nil
 }
 
-func (maker *JWTMaker) CreateToken(username string, duration time.Duration) (string, *Payload, error) {
-	payload, err := NewPayload(username, duration)
+func (maker *JWTMaker) CreateToken(username string, duration time.Duration, role string, tokenType TokenType) (string, *Payload, error) {
+	payload, err := NewPayload(username, duration, role, tokenType)
 	if err != nil {
 		return "", payload, err
 	}
@@ -45,8 +45,7 @@ func (maker *JWTMaker) VerifyToken(token string) (*Payload, error) {
 
 	jwtToken, err := jwt.ParseWithClaims(token, &Payload{}, KeyFunc)
 	if err != nil {
-		verr, ok := err.(*jwt.ValidationError)
-		if ok && errors.Is(verr.Inner, ErrExpiredToken) {
+		if errors.Is(err, jwt.ErrTokenExpired) {
 			return nil, ErrExpiredToken
 		}
 		return nil, ErrInvalidToken

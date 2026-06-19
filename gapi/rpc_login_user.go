@@ -2,10 +2,11 @@ package gapi
 
 import (
 	"context"
-	"database/sql"
+	"errors"
 
 	db "github.com/oldlay/simplebank/db/sqlc"
 	"github.com/oldlay/simplebank/pb"
+	"github.com/oldlay/simplebank/token"
 	"github.com/oldlay/simplebank/util"
 	"github.com/oldlay/simplebank/val"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
@@ -22,7 +23,7 @@ func (server *Server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (
 
 	user, err := server.store.GetUser(ctx, req.GetUsername())
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, db.ErrRecordNotFound) {
 			return nil, status.Errorf(codes.NotFound, "user not found: %s", err)
 		}
 		return nil, status.Errorf(codes.Internal, "failed to find user: %s", err)
@@ -36,6 +37,8 @@ func (server *Server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (
 	accessToken, accessPayload, err := server.tokenMaker.CreateToken(
 		user.Username,
 		server.config.AccessTokenDuration,
+		user.Role,
+		token.TokenTypeAccessToken,
 	)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to create access token: %s", err)
@@ -44,6 +47,8 @@ func (server *Server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (
 	refreshToken, refreshPayload, err := server.tokenMaker.CreateToken(
 		user.Username,
 		server.config.RefreshTokenDuration,
+		user.Role,
+		token.TokenTypeRefreshToken,
 	)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to create refresh token: %s", err)

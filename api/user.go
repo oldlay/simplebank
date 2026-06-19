@@ -1,14 +1,14 @@
 package api
 
 import (
-	"database/sql"
+	"errors"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/lib/pq"
 	db "github.com/oldlay/simplebank/db/sqlc"
+	"github.com/oldlay/simplebank/token"
 	"github.com/oldlay/simplebank/util"
 )
 
@@ -60,12 +60,9 @@ func (server *Server) createUser(ctx *gin.Context) {
 
 	user, err := server.store.CreateUser(ctx, arg)
 	if err != nil {
-		if pqErr, ok := err.(*pq.Error); ok {
-			switch pqErr.Code.Name() {
-			case "unique_violation":
-				ctx.JSON(http.StatusForbidden, errorResponse(err))
-				return
-			}
+		if db.ErrorCode(err) == db.UniqueViolation {
+			ctx.JSON(http.StatusForbidden, errorResponse(err))
+			return
 		}
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -97,7 +94,7 @@ func (server *Server) loginUser(ctx *gin.Context) {
 
 	user, err := server.store.GetUser(ctx, req.Username)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, db.ErrRecordNotFound) {
 			ctx.JSON(http.StatusNotFound, errorResponse(err))
 			return
 		}
@@ -114,6 +111,8 @@ func (server *Server) loginUser(ctx *gin.Context) {
 	accessToken, accessPayload, err := server.tokenMaker.CreateToken(
 		user.Username,
 		server.config.AccessTokenDuration,
+		user.Role,
+		token.TokenTypeAccessToken,
 	)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
@@ -123,6 +122,8 @@ func (server *Server) loginUser(ctx *gin.Context) {
 	refreshToken, refreshPayload, err := server.tokenMaker.CreateToken(
 		user.Username,
 		server.config.RefreshTokenDuration,
+		user.Role,
+		token.TokenTypeRefreshToken,
 	)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))

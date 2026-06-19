@@ -27,6 +27,7 @@ func randomUser(t *testing.T) (user db.User, password string) {
 	user = db.User{
 		Username:       util.RandomOwner(),
 		HashedPassword: hashedPassword,
+		Role:           util.DepositorRole,
 		FullName:       util.RandomOwner(),
 		Email:          util.RandomEmail(),
 	}
@@ -141,6 +142,59 @@ func TestCreateUserAPI(t *testing.T) {
 				st, ok := status.FromError(err)
 				require.True(t, ok)
 				require.Equal(t, codes.Internal, st.Code())
+			},
+		},
+		{
+			name: "DuplicateUsername",
+			req: &pb.CreateUserRequest{
+				Username: user.Username,
+				FullName: user.FullName,
+				Email:    user.Email,
+				Password: password,
+			},
+			buildStubs: func(store *mockdb.MockStore, taskDistributor *mockwk.MockTaskDistributor) {
+				store.EXPECT().
+					CreateUserTx(gomock.Any(), gomock.Any()).
+					Times(1).
+					Return(db.CreateUserTxResult{}, db.ErrUniqueViolation)
+
+				taskDistributor.EXPECT().
+					DistributeTaskSendVerifyEmail(gomock.Any(), gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(t *testing.T, res *pb.CreateUserResponse, err error) {
+				require.Error(t, err)
+				st, ok := status.FromError(err)
+				require.True(t, ok)
+				require.Equal(t, codes.AlreadyExists, st.Code())
+			},
+		},
+		{
+			name: "InvalidEmail",
+			req: &pb.CreateUserRequest{
+				Username: user.Username,
+				FullName: user.FullName,
+				Email:    "invalid-email",
+				Password: password,
+			},
+			buildStubs: func(store *mockdb.MockStore, taskDistributor *mockwk.MockTaskDistributor) {
+				store.EXPECT().
+					CreateUserTx(gomock.Any(), gomock.Any()).
+					Times(0)
+
+				taskPayload := &worker.PayloadSendVerifyEmail{
+					Username: user.Username,
+				}
+
+				taskDistributor.EXPECT().
+					DistributeTaskSendVerifyEmail(gomock.Any(), taskPayload, gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(t *testing.T, res *pb.CreateUserResponse, err error) {
+				require.Error(t, err)
+				st, ok := status.FromError(err)
+				require.True(t, ok)
+				require.Equal(t, codes.InvalidArgument, st.Code())
 			},
 		},
 	}

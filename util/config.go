@@ -11,6 +11,7 @@ import (
 
 type Config struct {
 	Environment          string        `mapstructure:"ENVIRONMENT"`
+	AllowedOrigins       []string      `mapstructure:"ALLOWED_ORIGINS"`
 	DBDriver             string        `mapstructure:"DB_DIRVER"`
 	DBSource             string        `mapstructure:"DB_SOURCE"`
 	MigrationURL         string        `mapstructure:"MIGRATION_URL"`

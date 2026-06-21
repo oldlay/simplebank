@@ -17,6 +17,7 @@ type Querier interface {
 	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
 	CreateTransfer(ctx context.Context, arg CreateTransferParams) (Transfer, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
+	CreateVerifyEmail(ctx context.Context, arg CreateVerifyEmailParams) (VerifyEmail, error)
 	DeleteAccount(ctx context.Context, id int64) error
 	GetAccount(ctx context.Context, id int64) (Account, error)
 	GetAccountForUpdate(ctx context.Context, id int64) (Account, error)
@@ -28,6 +29,26 @@ type Querier interface {
 	ListEntry(ctx context.Context, arg ListEntryParams) ([]Entry, error)
 	ListTransfer(ctx context.Context, arg ListTransferParams) ([]Transfer, error)
 	UpdateAccount(ctx context.Context, arg UpdateAccountParams) (Account, error)
+	// use boolean way:
+	// UPDATE users
+	// SET
+	//   hashed_password = CASE
+	//     WHEN @set_hashed_password::boolean = TRUE THEN @hashed_password
+	//     ELSE hashed_password
+	//   END,
+	//   full_name = CASE
+	//     WHEN @set_full_name::boolean = TRUE THEN @full_name
+	//     ELSE full_name
+	//   END,
+	//   email = CASE
+	//     WHEN @set_email::boolean = TRUE THEN @email
+	//     ELSE email
+	//   END
+	// WHERE
+	//   username = @username
+	// RETURNING *;
+	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
+	UpdateVerifyEmail(ctx context.Context, arg UpdateVerifyEmailParams) (VerifyEmail, error)
 }
 
 var _ Querier = (*Queries)(nil)

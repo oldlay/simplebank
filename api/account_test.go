@@ -13,7 +13,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
-	"github.com/lib/pq"
+	"github.com/jackc/pgx/v5/pgconn"
 	mockdb "github.com/oldlay/simplebank/db/mock"
 	db "github.com/oldlay/simplebank/db/sqlc"
 	"github.com/oldlay/simplebank/token"
@@ -82,7 +82,7 @@ func TestGetAccountAPI(t *testing.T) {
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().GetAccount(gomock.Any(), gomock.Eq(account.ID)).
-					Times(1).Return(db.Account{}, sql.ErrNoRows)
+					Times(1).Return(db.Account{}, db.ErrRecordNotFound)
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusNotFound, recorder.Code)
@@ -201,7 +201,7 @@ func TestCreateAccountAPI(t *testing.T) {
 					Balance:  "0",
 				}
 				store.EXPECT().CreateAccount(gomock.Any(), gomock.Eq(arg)).
-					Times(1).Return(db.Account{}, sql.ErrNoRows)
+					Times(1).Return(db.Account{}, db.ErrRecordNotFound)
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusInternalServerError, recorder.Code)
@@ -247,7 +247,8 @@ func TestCreateAccountAPI(t *testing.T) {
 				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.Username, time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
-				pqErr := &pq.Error{
+
+				pqErr := &pgconn.PgError{
 					Code:    "23505", // 23505 是 unique_violation
 					Message: "duplicate key value violates unique constraint",
 				}
@@ -464,7 +465,7 @@ func TestUpdateAccountAPI(t *testing.T) {
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().UpdateAccount(gomock.Any(), gomock.Any()).
-					Times(1).Return(account, sql.ErrNoRows)
+					Times(1).Return(account, db.ErrRecordNotFound)
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusNotFound, recorder.Code)
@@ -584,7 +585,7 @@ func TestDeleteAccountAPI(t *testing.T) {
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().DeleteAccount(gomock.Any(), gomock.Eq(account.ID)).
-					Times(1).Return(sql.ErrNoRows)
+					Times(1).Return(db.ErrRecordNotFound)
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusNotFound, recorder.Code)

@@ -75,6 +75,25 @@ func (q *Queries) GetUser(ctx context.Context, username string) (User, error) {
 const updateUser = `-- name: UpdateUser :one
 /* 
 in sqlc how to conditionally update fields based on whether the input is null or not?
+
+use boolean way:
+UPDATE users
+SET 
+  hashed_password = CASE
+    WHEN @set_hashed_password::boolean = TRUE THEN @hashed_password
+    ELSE hashed_password
+  END,
+  full_name = CASE
+    WHEN @set_full_name::boolean = TRUE THEN @full_name
+    ELSE full_name
+  END,
+  email = CASE
+    WHEN @set_email::boolean = TRUE THEN @email
+    ELSE email
+  END
+WHERE 
+  username = @username
+RETURNING *;
 */
 
 UPDATE users
@@ -83,9 +102,10 @@ SET
   password_changed_at = COALESCE($2, password_changed_at),
   full_name = COALESCE($3, full_name),
   email = COALESCE($4, email),
-  is_email_verified = COALESCE($5, is_email_verified)
+  is_email_verified = COALESCE($5, is_email_verified),
+  role = COALESCE($6, role)
 WHERE 
-  username = $6
+  username = $7
 RETURNING username, hashed_password, full_name, email, password_changed_at, created_at, is_email_verified, role
 `
 
@@ -95,31 +115,10 @@ type UpdateUserParams struct {
 	FullName          pgtype.Text        `json:"full_name"`
 	Email             pgtype.Text        `json:"email"`
 	IsEmailVerified   pgtype.Bool        `json:"is_email_verified"`
+	Role              pgtype.Text        `json:"role"`
 	Username          string             `json:"username"`
 }
 
-// use boolean way:
-// UPDATE users
-// SET
-//
-//	hashed_password = CASE
-//	  WHEN @set_hashed_password::boolean = TRUE THEN @hashed_password
-//	  ELSE hashed_password
-//	END,
-//	full_name = CASE
-//	  WHEN @set_full_name::boolean = TRUE THEN @full_name
-//	  ELSE full_name
-//	END,
-//	email = CASE
-//	  WHEN @set_email::boolean = TRUE THEN @email
-//	  ELSE email
-//	END
-//
-// WHERE
-//
-//	username = @username
-//
-// RETURNING *;
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error) {
 	row := q.db.QueryRow(ctx, updateUser,
 		arg.HashedPassword,
@@ -127,6 +126,7 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, e
 		arg.FullName,
 		arg.Email,
 		arg.IsEmailVerified,
+		arg.Role,
 		arg.Username,
 	)
 	var i User

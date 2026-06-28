@@ -28,3 +28,7 @@ func invalidArgumentError(violations []*errdetails.BadRequest_FieldViolation) er
 func unauthenticatedError(err error) error {
 	return status.Error(codes.Unauthenticated, err.Error())
 }
+
+func decimalTransError(err error) error {
+	return status.Error(codes.Internal, err.Error())
+}

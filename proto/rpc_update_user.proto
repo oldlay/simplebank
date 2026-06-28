@@ -13,7 +13,8 @@ message UpdateUserRequest {
     optional string full_name = 2;
     optional string email = 3;
     optional string password = 4;
-}
+    optional string role = 5;
+} 
 
 message UpdateUserResponse {
     User user = 1;

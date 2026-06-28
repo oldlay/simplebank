@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package pb;
+
+import "account.proto";
+import "transfer.proto";
+import "entry.proto";
+import "google/type/decimal.proto";
+
+option go_package = "github.com/oldlay/simplebank/pb";
+
+message CreateTransferRequest {
+    int64 from_account_id = 1;
+    string to_owner = 2;
+    string to_currency = 3;
+    google.type.Decimal amount = 4;
+    string currency = 5;
+}
+
+message CreateTransferResponse {
+    Transfer transfer = 1;
+    Account from_account = 2;
+    Account to_account = 3;
+    Entry from_entry = 4;
+    Entry to_entry = 5;
+}

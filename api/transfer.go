@@ -8,13 +8,14 @@ import (
 	"github.com/gin-gonic/gin"
 	db "github.com/oldlay/simplebank/db/sqlc"
 	"github.com/oldlay/simplebank/token"
+	"github.com/shopspring/decimal"
 )
 
 type transferRequest struct {
-	FromAccountID int64  `json:"from_account_id" binding:"required,min=1"`
-	ToAccountID   int64  `json:"to_account_id" binding:"required,min=1"`
-	Amount        string `json:"amount" binding:"required"`
-	Currency      string `json:"currency" binding:"required,currency"`
+	FromAccountID int64           `json:"from_account_id" binding:"required,min=1"`
+	ToAccountID   int64           `json:"to_account_id" binding:"required,min=1"`
+	Amount        decimal.Decimal `json:"amount" binding:"required"`
+	Currency      string          `json:"currency" binding:"required,currency"`
 }
 
 // client --> server --> client(create ok)
@@ -38,6 +39,12 @@ func (server *Server) createTransfer(ctx *gin.Context) {
 
 	_, valid = server.validAccount(ctx, req.ToAccountID, req.Currency)
 	if !valid {
+		return
+	}
+
+	if fromAccount.Balance.LessThan(req.Amount.Abs()) {
+		err := errors.New("invalid amount")
+		ctx.JSON(http.StatusNotFound, errorResponse(err))
 		return
 	}
 

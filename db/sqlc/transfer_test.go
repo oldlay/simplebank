@@ -21,7 +21,7 @@ func createRandomTransfer(t *testing.T, fromAccount, toAccount Account) Transfer
 
 	require.Equal(t, arg.FromAccountID, transfer.FromAccountID)
 	require.Equal(t, arg.ToAccountID, transfer.ToAccountID)
-	require.Equal(t, arg.Amount, transfer.Amount)
+	require.True(t, arg.Amount.Equal(transfer.Amount))
 
 	require.NotZero(t, transfer.ID)
 	require.NotZero(t, transfer.CreatedAt)

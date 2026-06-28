@@ -16,6 +16,8 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/hibiken/asynq"
+	pgxdecimal "github.com/jackc/pgx-shopspring-decimal"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/oldlay/simplebank/api"
 	db "github.com/oldlay/simplebank/db/sqlc"
@@ -55,7 +57,18 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), interruptSignals...)
 	defer stop()
 
-	conn, err := pgxpool.New(ctx, config.DBSource)
+	pgxConfig, err := pgxpool.ParseConfig(config.DBSource)
+	if err != nil {
+		log.Fatal().Err(err).Msg("Unable to parse db config")
+	}
+
+	pgxConfig.AfterConnect = func(ctx context.Context, conn *pgx.Conn) error {
+		pgxdecimal.Register(conn.TypeMap())
+		return nil
+	}
+
+	conn, err := pgxpool.NewWithConfig(ctx, pgxConfig)
+
 	if err != nil {
 		log.Fatal().Err(err).Msg("cannot connect to db")
 	}
@@ -75,7 +88,7 @@ func main() {
 	runTaskProcessor(ctx, waitGroup, config, redisOpt, store)
 	runGatewayServer(ctx, waitGroup, config, store, taskDistributor)
 	runGrpcServer(ctx, waitGroup, config, store, taskDistributor)
-	//runGinServer(config, store)
+	//runGinServer(ctx, waitGroup, config, store, taskDistributor)
 
 	err = waitGroup.Wait()
 	if err != nil {
@@ -98,15 +111,40 @@ func runDBMigration(migrationURL string, dbSource string) {
 }
 
 // runGinServer starts the HTTP server with Gin framework
-func runGinServer(config util.Config, store db.Store) {
-	server, err := api.NewServer(config, store)
+func runGinServer(
+	ctx context.Context,
+	waitGroup *errgroup.Group,
+	config util.Config,
+	store db.Store,
+	taskDistributor worker.TaskDistributor,
+) {
+
+	server, err := api.NewServer(config, store, taskDistributor)
 	if err != nil {
 		log.Fatal().Err(err).Msg("cannnot create server")
 	}
-	err = server.Start(config.HTTPServerAddress)
-	if err != nil {
-		log.Fatal().Err(err).Msg("cannot start server")
+	srv := &http.Server{
+		Addr:    ":8080",
+		Handler: server.Router().Handler(),
 	}
+
+	waitGroup.Go(func() error {
+		err := srv.ListenAndServe()
+		if err != nil && err != http.ErrServerClosed {
+			log.Fatal().Err(err).Msg("cannot start server")
+			return err
+		}
+		return nil
+	})
+
+	waitGroup.Go(func() error {
+		<-ctx.Done()
+		log.Info().Msg("graceful shutdown task processor")
+
+		srv.Close()
+		log.Info().Msg("HTTP server is stopped")
+		return nil
+	})
 }
 
 func runTaskProcessor(

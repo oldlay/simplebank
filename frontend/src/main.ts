@@ -1,26 +1,30 @@
-import "./assets/main.css";
-import PrimeVue from "primevue/config";
-import Aura from "@primeuix/themes/aura";
-import ToastService from "primevue/toastservice";
+import './assets/main.css'
+import PrimeVue from 'primevue/config'
+import Aura from '@primeuix/themes/aura'
+import ToastService from 'primevue/toastservice'
+import ConfirmationService from 'primevue/confirmationservice'
+import { createApp } from 'vue'
+import App from './App.vue'
+import router from './router'
+import store from './store'
 
-import { createApp } from "vue";
-import App from "./App.vue";
-import router from "./router";
+// Restore persisted session before the app mounts
+store.loadPersistedAuth()
 
-const app = createApp(App);
+const app = createApp(App)
 
-app.use(router);
+app.use(router)
 app.use(PrimeVue, {
-  // Default theme configuration
   theme: {
     preset: Aura,
     options: {
-      prefix: "p",
-      darkModeSelector: "system",
+      prefix: 'p',
+      darkModeSelector: '.never-match',
       cssLayer: false,
     },
   },
-});
-app.use(ToastService);
+})
+app.use(ToastService)
+app.use(ConfirmationService)
 
-app.mount("#app");
+app.mount('#app')

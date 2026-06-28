@@ -15,11 +15,13 @@ import (
 	db "github.com/oldlay/simplebank/db/sqlc"
 	"github.com/oldlay/simplebank/token"
 	"github.com/oldlay/simplebank/util"
+	mockwk "github.com/oldlay/simplebank/worker/mock"
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
 )
 
 func TestCreateTransfer(t *testing.T) {
-	amount := "10"
+	amount := decimal.RequireFromString("10")
 
 	user1, _ := randomUser(t)
 	user2, _ := randomUser(t)
@@ -247,19 +249,43 @@ func TestCreateTransfer(t *testing.T) {
 				require.Equal(t, http.StatusInternalServerError, recorder.Code)
 			},
 		},
+		{
+			name: "InvalidAmount",
+			body: gin.H{
+				"from_account_id": account1.ID,
+				"to_account_id":   account2.ID,
+				"amount":          decimal.RequireFromString("99999999"),
+				"currency":        util.USD,
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user1.Username, time.Minute)
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().GetAccount(gomock.Any(), gomock.Eq(account1.ID)).Times(1).Return(account1, nil)
+				store.EXPECT().GetAccount(gomock.Any(), gomock.Eq(account2.ID)).Times(1).Return(account2, nil)
+				store.EXPECT().TransferTx(gomock.Any(), gomock.Any()).Times(0)
+			},
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusNotFound, recorder.Code)
+			},
+		},
 	}
 
 	for i := range testCases {
 		tc := testCases[i]
 
 		t.Run(tc.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			storectrl := gomock.NewController(t)
+			defer storectrl.Finish()
 
-			store := mockdb.NewMockStore(ctrl)
+			store := mockdb.NewMockStore(storectrl)
 			tc.buildStubs(store)
 
-			server := newTestServer(t, store)
+			taskctrl := gomock.NewController(t)
+			defer taskctrl.Finish()
+			taskDistributor := mockwk.NewMockTaskDistributor(taskctrl)
+
+			server := newTestServer(t, store, taskDistributor)
 			recoder := httptest.NewRecorder()
 
 			data, err := json.Marshal(tc.body)

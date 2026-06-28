@@ -5,8 +5,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	// pgxdecimal "github.com/jackc/pgx-shopspring-decimal"
 	db "github.com/oldlay/simplebank/db/sqlc"
 	"github.com/oldlay/simplebank/token"
+	"github.com/shopspring/decimal"
 )
 
 type createAccountRequest struct {
@@ -22,10 +24,11 @@ func (server *Server) createAccount(ctx *gin.Context) {
 	}
 
 	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+	balance, err := decimal.NewFromString("0")
 	arg := db.CreateAccountParams{
 		Owner:    authPayload.Username,
 		Currency: req.Currency,
-		Balance:  "0",
+		Balance:  balance,
 	}
 
 	account, err := server.store.CreateAccount(ctx, arg)
@@ -104,7 +107,7 @@ type UpdateAccountURI struct {
 }
 
 type UpdateAccountRequest struct {
-	Balance string `json:"balance" binding:"required"`
+	Balance decimal.Decimal `json:"balance" binding:"required"`
 }
 
 func (server *Server) updateAccount(ctx *gin.Context) {

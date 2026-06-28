@@ -27,6 +27,7 @@ type UpdateUserRequest struct {
 	FullName      *string                `protobuf:"bytes,2,opt,name=full_name,json=fullName,proto3,oneof" json:"full_name,omitempty"`
 	Email         *string                `protobuf:"bytes,3,opt,name=email,proto3,oneof" json:"email,omitempty"`
 	Password      *string                `protobuf:"bytes,4,opt,name=password,proto3,oneof" json:"password,omitempty"`
+	Role          *string                `protobuf:"bytes,5,opt,name=role,proto3,oneof" json:"role,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -89,6 +90,13 @@ func (x *UpdateUserRequest) GetPassword() string {
 	return ""
 }
 
+func (x *UpdateUserRequest) GetRole() string {
+	if x != nil && x.Role != nil {
+		return *x.Role
+	}
+	return ""
+}
+
 type UpdateUserResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	User          *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
@@ -138,16 +146,18 @@ var File_rpc_update_user_proto protoreflect.FileDescriptor
 const file_rpc_update_user_proto_rawDesc = "" +
 	"\n" +
 	"\x15rpc_update_user.proto\x12\x02pb\x1a\n" +
-	"user.proto\"\xb2\x01\n" +
+	"user.proto\"\xd4\x01\n" +
 	"\x11UpdateUserRequest\x12\x1a\n" +
 	"\busername\x18\x01 \x01(\tR\busername\x12 \n" +
 	"\tfull_name\x18\x02 \x01(\tH\x00R\bfullName\x88\x01\x01\x12\x19\n" +
 	"\x05email\x18\x03 \x01(\tH\x01R\x05email\x88\x01\x01\x12\x1f\n" +
-	"\bpassword\x18\x04 \x01(\tH\x02R\bpassword\x88\x01\x01B\f\n" +
+	"\bpassword\x18\x04 \x01(\tH\x02R\bpassword\x88\x01\x01\x12\x17\n" +
+	"\x04role\x18\x05 \x01(\tH\x03R\x04role\x88\x01\x01B\f\n" +
 	"\n" +
 	"_full_nameB\b\n" +
 	"\x06_emailB\v\n" +
-	"\t_password\"2\n" +
+	"\t_passwordB\a\n" +
+	"\x05_role\"2\n" +
 	"\x12UpdateUserResponse\x12\x1c\n" +
 	"\x04user\x18\x01 \x01(\v2\b.pb.UserR\x04userB!Z\x1fgithub.com/oldlay/simplebank/pbb\x06proto3"
 

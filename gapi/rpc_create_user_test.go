@@ -207,7 +207,7 @@ func TestCreateUserAPI(t *testing.T) {
 			store := mockdb.NewMockStore(storectrl)
 
 			taskctrl := gomock.NewController(t)
-			defer storectrl.Finish()
+			defer taskctrl.Finish()
 			taskDistributor := mockwk.NewMockTaskDistributor(taskctrl)
 
 			tc.buildStubs(store, taskDistributor)

@@ -25,7 +25,6 @@ func (server *Server) CreateTransfer(ctx context.Context, req *pb.CreateTransfer
 
 	fromAccount, err := ValidateAccount(ctx, server, req.FromAccountId, req.Currency)
 	if err != nil {
-		fmt.Println("ValidateAccount")
 		violations = append(violations, fieldViolation("From_account_invalid", err))
 	}
 
@@ -41,12 +40,10 @@ func (server *Server) CreateTransfer(ctx context.Context, req *pb.CreateTransfer
 
 	_, err = ValidateAccount(ctx, server, toAccountId, req.Currency)
 	if err != nil {
-		fmt.Println("ValidateAccount")
 		violations = append(violations, fieldViolation("To_account_invalid", err))
 	}
 
 	if violations != nil {
-		fmt.Println("validateCreateTransferRequest")
 		return nil, invalidArgumentError(violations)
 	}
 
@@ -56,13 +53,11 @@ func (server *Server) CreateTransfer(ctx context.Context, req *pb.CreateTransfer
 
 	amount, err := util.ProtoToShopDecimal(req.Amount)
 	if err != nil {
-		fmt.Println("rotoToShopDecimal")
 		return nil, invalidArgumentError(violations)
 	}
 
 	//invalid amount
 	if fromAccount.Balance.LessThan(amount.Abs()) {
-		fmt.Println("LessThan")
 		return nil, invalidArgumentError(violations)
 	}
 

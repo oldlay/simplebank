@@ -7,6 +7,8 @@ package db
 
 import (
 	"context"
+
+	"github.com/shopspring/decimal"
 )
 
 const addAccountBalance = `-- name: AddAccountBalance :one
@@ -17,8 +19,8 @@ RETURNING id, owner, balance, currency, created_at
 `
 
 type AddAccountBalanceParams struct {
-	Amount string `json:"amount"`
-	ID     int64  `json:"id"`
+	Amount decimal.Decimal `json:"amount"`
+	ID     int64           `json:"id"`
 }
 
 func (q *Queries) AddAccountBalance(ctx context.Context, arg AddAccountBalanceParams) (Account, error) {
@@ -46,9 +48,9 @@ RETURNING id, owner, balance, currency, created_at
 `
 
 type CreateAccountParams struct {
-	Owner    string `json:"owner"`
-	Balance  string `json:"balance"`
-	Currency string `json:"currency"`
+	Owner    string          `json:"owner"`
+	Balance  decimal.Decimal `json:"balance"`
+	Currency string          `json:"currency"`
 }
 
 func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) (Account, error) {
@@ -111,6 +113,24 @@ func (q *Queries) GetAccountForUpdate(ctx context.Context, id int64) (Account, e
 	return i, err
 }
 
+const getAccountFromOwner = `-- name: GetAccountFromOwner :one
+SELECT id
+FROM accounts
+WHERE owner = $1 and currency = $2
+`
+
+type GetAccountFromOwnerParams struct {
+	Owner    string `json:"owner"`
+	Currency string `json:"currency"`
+}
+
+func (q *Queries) GetAccountFromOwner(ctx context.Context, arg GetAccountFromOwnerParams) (int64, error) {
+	row := q.db.QueryRow(ctx, getAccountFromOwner, arg.Owner, arg.Currency)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
 const listAccount = `-- name: ListAccount :many
 SELECT id, owner, balance, currency, created_at FROM accounts
 WHERE owner = $1
@@ -159,8 +179,8 @@ RETURNING id, owner, balance, currency, created_at
 `
 
 type UpdateAccountParams struct {
-	ID      int64  `json:"id"`
-	Balance string `json:"balance"`
+	ID      int64           `json:"id"`
+	Balance decimal.Decimal `json:"balance"`
 }
 
 func (q *Queries) UpdateAccount(ctx context.Context, arg UpdateAccountParams) (Account, error) {

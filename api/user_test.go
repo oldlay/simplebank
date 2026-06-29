@@ -26,7 +26,7 @@ type eqCreateUserParamsMatcher struct {
 
 func (e eqCreateUserParamsMatcher) Matches(x interface{}) bool {
 	// In case, some value is nil
-	arg, ok := x.(db.CreateUserParams)
+	arg, ok := x.(db.CreateUserTxParams)
 	if !ok {
 		return false
 	}
@@ -36,7 +36,7 @@ func (e eqCreateUserParamsMatcher) Matches(x interface{}) bool {
 	}
 
 	e.arg.HashedPassword = arg.HashedPassword
-	return reflect.DeepEqual(e.arg, arg)
+	return reflect.DeepEqual(e.arg, arg.CreateUserParams)
 }
 
 func (e eqCreateUserParamsMatcher) String() string {
@@ -65,15 +65,18 @@ func TestCreateUserAPI(t *testing.T) {
 				"email":     user.Email,
 			},
 			buildStubs: func(store *mockdb.MockStore) {
-				arg := db.CreateUserParams{
-					Username: user.Username,
-					FullName: user.FullName,
-					Email:    user.Email,
+				arg := db.CreateUserTxParams{
+					CreateUserParams: db.CreateUserParams{
+						Username:       user.Username,
+						FullName:       user.FullName,
+						Email:          user.Email,
+						HashedPassword: user.HashedPassword,
+					},
 				}
 				store.EXPECT().
-					CreateUser(gomock.Any(), EqCreateUserParams(arg, password)).
+					CreateUserTx(gomock.Any(), EqCreateUserParams(arg.CreateUserParams, password)).
 					Times(1).
-					Return(user, nil)
+					Return(db.CreateUserTxResult{User: user}, nil)
 
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder) {
@@ -90,9 +93,9 @@ func TestCreateUserAPI(t *testing.T) {
 				"email":     user.Email,
 			},
 			buildStubs: func(store *mockdb.MockStore) {
-				store.EXPECT().CreateUser(gomock.Any(), gomock.Any()).
+				store.EXPECT().CreateUserTx(gomock.Any(), gomock.Any()).
 					Times(1).
-					Return(db.User{}, sql.ErrConnDone)
+					Return(db.CreateUserTxResult{User: db.User{}}, sql.ErrConnDone)
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusInternalServerError, recorder.Code)
@@ -157,7 +160,7 @@ func TestCreateUserAPI(t *testing.T) {
 			store := mockdb.NewMockStore(ctrl)
 			tc.buildStubs(store)
 
-			server := newTestServer(t, store)
+			server := newTestServer(t, store, nil)
 			recorder := httptest.NewRecorder()
 
 			data, err := json.Marshal(tc.body)
@@ -273,7 +276,7 @@ func TestLoginUserAPI(t *testing.T) {
 			store := mockdb.NewMockStore(ctrl)
 			tc.buildStubs(store)
 
-			server := newTestServer(t, store)
+			server := newTestServer(t, store, nil)
 			recorder := httptest.NewRecorder()
 
 			data, err := json.Marshal(tc.body)

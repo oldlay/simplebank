@@ -1,12 +1,16 @@
 package db
 
-import "context"
+import (
+	"context"
+
+	"github.com/shopspring/decimal"
+)
 
 // TransferTxParams contains the input parameters of the transfer transaction
 type TransferTxParams struct {
-	FromAccountID int64  `json:"from_account_id"`
-	ToAccountID   int64  `json:"to_account_id"`
-	Amount        string `json:"amount"`
+	FromAccountID int64           `json:"from_account_id"`
+	ToAccountID   int64           `json:"to_account_id"`
+	Amount        decimal.Decimal `json:"amount"`
 }
 
 type TransferTxResult struct {
@@ -42,7 +46,7 @@ func (store *SQLStore) TransferTx(ctx context.Context, arg TransferTxParams) (Tr
 		//fmt.Println(txName, "create entry 1")
 		result.FromEntry, err = q.CreateEntry(ctx, CreateEntryParams{
 			AccountID: arg.FromAccountID,
-			Amount:    "-" + arg.Amount,
+			Amount:    arg.Amount.Neg(),
 		})
 		if err != nil {
 			return err
@@ -59,9 +63,9 @@ func (store *SQLStore) TransferTx(ctx context.Context, arg TransferTxParams) (Tr
 
 		//get account -> update its balance
 		if arg.FromAccountID < arg.ToAccountID {
-			result.FromAccount, result.ToAccount, err = addMoney(ctx, q, arg.FromAccountID, "-"+arg.Amount, arg.ToAccountID, arg.Amount)
+			result.FromAccount, result.ToAccount, err = addMoney(ctx, q, arg.FromAccountID, arg.Amount.Neg(), arg.ToAccountID, arg.Amount)
 		} else {
-			result.ToAccount, result.FromAccount, err = addMoney(ctx, q, arg.ToAccountID, arg.Amount, arg.FromAccountID, "-"+arg.Amount)
+			result.ToAccount, result.FromAccount, err = addMoney(ctx, q, arg.ToAccountID, arg.Amount, arg.FromAccountID, arg.Amount.Neg())
 		}
 
 		return nil
@@ -74,9 +78,9 @@ func addMoney(
 	ctx context.Context,
 	q *Queries,
 	accountID1 int64,
-	amount1 string,
+	amount1 decimal.Decimal,
 	accountID2 int64,
-	amount2 string,
+	amount2 decimal.Decimal,
 ) (account1 Account, account2 Account, err error) {
 	account1, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
 		ID:     accountID1,

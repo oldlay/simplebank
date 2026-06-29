@@ -1,33 +1,229 @@
-
 @import 'primeicons/primeicons.css';
 @import '/node_modules/primeflex/primeflex.css';
 
+/* ── Design Tokens ─────────────────────────────────── */
+:root {
+  --color-vault-navy: #1e2d3d;
+  --color-gold-reserve: #b8942e;
+  --color-ledger-white: #fafaf8;
+  --color-statement-border: #d4d0c8;
+  --color-muted-bronze: #5e5040;
+
+  --font-display: 'DM Serif Display', Georgia, 'Times New Roman', serif;
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Cascadia Code', monospace;
+
+  --ledger-line-width: 2.5rem;
+  --radius-card: 6px;
+}
+
+/* ── Base ──────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: var(--color-ledger-white);
+  color: var(--color-vault-navy);
+  font-family: var(--font-body);
+  font-weight: 400;
+  line-height: 1.6;
+}
 
 #app {
-  max-width: 1280px;
+  max-width: 480px;
   margin: 0 auto;
-  padding: 2rem;
-  font-weight: normal;
+  padding: 3rem 1.5rem;
 }
 
-a,
-.green {
+/* ── Typography ────────────────────────────────────── */
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  line-height: 1.2;
+  margin: 0 0 0.75rem;
+  color: var(--color-vault-navy);
+}
+
+h1 {
+  font-size: 2rem;
+  letter-spacing: -0.01em;
+}
+
+/* ── Signature: The Ledger Line ────────────────────── */
+.ledger-heading {
+  position: relative;
+  padding-bottom: 0.875rem;
+  margin-bottom: 1.5rem;
+}
+
+.ledger-heading::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: var(--ledger-line-width);
+  height: 1px;
+  background-color: var(--color-gold-reserve);
+}
+
+/* ── Links ─────────────────────────────────────────── */
+a {
+  color: var(--color-vault-navy);
   text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
-  padding: 3px;
+  border-bottom: 1px solid var(--color-statement-border);
+  transition: border-color 0.2s ease;
 }
 
-@media (hover: hover) {
-  a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
+a:hover {
+  border-bottom-color: var(--color-gold-reserve);
+}
+
+/* ── Focus ─────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--color-gold-reserve);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* ── Reduced Motion ────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 
-@media (min-width: 1024px) {
-  body {
-    display: flex;
-    place-items: center;
-  }
+/* ── PrimeVue Overrides ────────────────────────────── */
+/* Tone down PrimeVue defaults to match the ledger aesthetic */
 
+.p-card {
+  border: 1px solid var(--color-statement-border) !important;
+  border-radius: var(--radius-card) !important;
+  box-shadow: none !important;
+  background: #ffffff !important;
+}
+
+.p-card .p-card-title {
+  font-family: var(--font-display) !important;
+  font-size: 1.25rem !important;
+  font-weight: 400 !important;
+  color: var(--color-vault-navy) !important;
+}
+
+.p-card .p-card-body {
+  padding: 1.5rem !important;
+}
+
+.p-inputtext {
+  font-family: var(--font-body) !important;
+  color: var(--color-vault-navy) !important;
+  border-color: var(--color-statement-border) !important;
+  border-radius: var(--radius-card) !important;
+  background: #ffffff !important;
+}
+
+.p-inputtext::placeholder {
+  color: #9ca3af !important;
+}
+
+.p-inputtext:enabled:focus {
+  border-color: var(--color-vault-navy) !important;
+  box-shadow: 0 0 0 1px var(--color-vault-navy) !important;
+}
+
+.p-inputgroupaddon {
+  background: #ffffff !important;
+  border-color: var(--color-statement-border) !important;
+  color: var(--color-muted-bronze) !important;
+}
+
+.p-floatlabel label {
+  color: var(--color-muted-bronze) !important;
+}
+
+.p-select {
+  font-family: var(--font-body) !important;
+  color: var(--color-vault-navy) !important;
+  border-color: var(--color-statement-border) !important;
+  border-radius: var(--radius-card) !important;
+  background: #ffffff !important;
+}
+
+.p-select-option {
+  color: var(--color-vault-navy) !important;
+}
+
+.p-dialog .p-dialog-title {
+  font-family: var(--font-display) !important;
+  color: var(--color-vault-navy) !important;
+}
+
+.p-divider {
+  border-color: var(--color-statement-border) !important;
+}
+
+.p-button {
+  font-family: var(--font-body) !important;
+  font-weight: 500 !important;
+  border-radius: var(--radius-card) !important;
+}
+
+.p-button:not(.p-button-outlined) {
+  background: var(--color-vault-navy) !important;
+  border-color: var(--color-vault-navy) !important;
+}
+
+.p-button:not(.p-button-outlined) .p-button-label {
+  color: #ffffff !important;
+}
+
+.p-button:not(.p-button-outlined):hover {
+  background: #2a3d50 !important;
+  border-color: #2a3d50 !important;
+}
+
+.p-button-outlined {
+  color: var(--color-vault-navy) !important;
+  border-color: var(--color-statement-border) !important;
+}
+
+.p-button-outlined .p-button-label {
+  color: var(--color-vault-navy) !important;
+}
+
+.p-button-outlined:hover {
+  background: rgba(30, 45, 61, 0.06) !important;
+  border-color: var(--color-vault-navy) !important;
+}
+
+.p-button-label {
+  font-weight: 500 !important;
+}
+
+.p-toast {
+  font-family: var(--font-body) !important;
+}
+
+/* ── Utility ───────────────────────────────────────── */
+.text-mono {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+}
+
+.text-muted {
+  color: var(--color-muted-bronze);
 }

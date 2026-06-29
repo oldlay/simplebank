@@ -2,7 +2,6 @@ package gapi
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/hibiken/asynq"
@@ -51,8 +50,6 @@ func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 
 		},
 	}
-	fmt.Println(">> start CreateUser")
-	time.Sleep(10 * time.Second)
 
 	TxResult, err := server.store.CreateUserTx(ctx, arg)
 	if err != nil {

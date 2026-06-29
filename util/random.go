@@ -5,6 +5,8 @@ import (
 	"math/rand"
 	"strings"
 	"time"
+
+	"github.com/shopspring/decimal"
 )
 
 const alphabet = "abcdefghijklmnopqrstuvwxyz"
@@ -37,7 +39,7 @@ func RandomOwner() string {
 }
 
 // RandomMoney generates random money amount
-func RandomMoney(n int) string {
+func RandomMoney(n int) decimal.Decimal {
 	var s []byte
 
 	k := len(number)
@@ -54,7 +56,7 @@ func RandomMoney(n int) string {
 		s[0] = number[RandomInt(1, 9)]
 	}
 
-	return string(s)
+	return decimal.RequireFromString(string(s))
 }
 
 // RandomCurrency generates random currency

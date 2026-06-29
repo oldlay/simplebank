@@ -7,6 +7,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
+// only postgresql return underlying error code, other is pgError
 const (
 	ForeignKeyViolation = "23503"
 	UniqueViolation     = "23505"

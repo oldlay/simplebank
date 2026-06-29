@@ -18,6 +18,7 @@ import (
 	db "github.com/oldlay/simplebank/db/sqlc"
 	"github.com/oldlay/simplebank/token"
 	"github.com/oldlay/simplebank/util"
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
 )
 
@@ -129,7 +130,7 @@ func TestGetAccountAPI(t *testing.T) {
 			//build stubs
 			tc.buildStubs(store)
 			//start test server and send request
-			server := newTestServer(t, store)
+			server := newTestServer(t, store, nil)
 			recorder := httptest.NewRecorder()
 
 			url := fmt.Sprintf("/accounts/%d", tc.accountID)
@@ -165,7 +166,7 @@ func TestCreateAccountAPI(t *testing.T) {
 				arg := db.CreateAccountParams{
 					Owner:    account.Owner,
 					Currency: account.Currency,
-					Balance:  "0",
+					Balance:  decimal.RequireFromString("0"),
 				}
 				store.EXPECT().CreateAccount(gomock.Any(), gomock.Eq(arg)).
 					Times(1).Return(account, nil)
@@ -198,7 +199,7 @@ func TestCreateAccountAPI(t *testing.T) {
 				arg := db.CreateAccountParams{
 					Owner:    account.Owner,
 					Currency: account.Currency,
-					Balance:  "0",
+					Balance:  decimal.RequireFromString("0"),
 				}
 				store.EXPECT().CreateAccount(gomock.Any(), gomock.Eq(arg)).
 					Times(1).Return(db.Account{}, db.ErrRecordNotFound)
@@ -217,7 +218,7 @@ func TestCreateAccountAPI(t *testing.T) {
 				arg := db.CreateAccountParams{
 					Owner:    account.Owner,
 					Currency: account.Currency,
-					Balance:  "0",
+					Balance:  decimal.RequireFromString("0"),
 				}
 				store.EXPECT().CreateAccount(gomock.Any(), gomock.Eq(arg)).
 					Times(1).Return(db.Account{}, sql.ErrConnDone)
@@ -272,7 +273,7 @@ func TestCreateAccountAPI(t *testing.T) {
 			//build stubs
 			tc.buildStubs(store)
 			//start test server and send request
-			server := newTestServer(t, store)
+			server := newTestServer(t, store, nil)
 			recorder := httptest.NewRecorder()
 
 			req := createAccountRequest{
@@ -400,7 +401,7 @@ func TestListAccountAPI(t *testing.T) {
 			//build stubs
 			tc.buildStubs(store)
 			//start test server and send request
-			server := newTestServer(t, store)
+			server := newTestServer(t, store, nil)
 			recorder := httptest.NewRecorder()
 
 			url := "/accounts"
@@ -445,7 +446,7 @@ func TestUpdateAccountAPI(t *testing.T) {
 			buildStubs: func(store *mockdb.MockStore) {
 				arg := db.UpdateAccountParams{
 					ID:      account.ID,
-					Balance: "100",
+					Balance: decimal.RequireFromString("100"),
 				}
 				store.EXPECT().UpdateAccount(gomock.Any(), gomock.Eq(arg)).
 					Times(1).Return(account, nil)
@@ -543,7 +544,7 @@ func TestUpdateAccountAPI(t *testing.T) {
 			request, err := http.NewRequest(http.MethodPatch, url, bytes.NewReader(data))
 			require.NoError(t, err)
 
-			server := newTestServer(t, store)
+			server := newTestServer(t, store, nil)
 			tc.setupAuth(t, request, server.tokenMaker)
 			server.router.ServeHTTP(recoder, request)
 			tc.checkResponse(t, recoder)
@@ -632,7 +633,7 @@ func TestDeleteAccountAPI(t *testing.T) {
 			//build stubs
 			tc.buildStubs(store)
 			//start test server and send request
-			server := newTestServer(t, store)
+			server := newTestServer(t, store, nil)
 			recorder := httptest.NewRecorder()
 
 			url := fmt.Sprintf("/accounts/%d", tc.accountID)
@@ -650,7 +651,7 @@ func randomAccount(owner string) db.Account {
 	return db.Account{
 		ID:       util.RandomInt(1, 1000),
 		Owner:    owner,
-		Balance:  util.RandomMoney(7),
+		Balance:  util.RandomMoney(6),
 		Currency: util.RandomCurrency(),
 	}
 }
@@ -662,7 +663,10 @@ func requireBodyMatchAccount(t *testing.T, body *bytes.Buffer, account db.Accoun
 	var gotAccount db.Account
 	err = json.Unmarshal(data, &gotAccount)
 	require.NoError(t, err)
-	require.Equal(t, account, gotAccount)
+	require.Equal(t, account.Owner, gotAccount.Owner)
+	require.Equal(t, account.Currency, gotAccount.Currency)
+	require.Equal(t, account.CreatedAt, gotAccount.CreatedAt)
+	require.True(t, account.Balance.Equal(gotAccount.Balance))
 }
 
 func requireBodyMatchAccounts(t *testing.T, body *bytes.Buffer, accounts []db.Account) {
@@ -672,5 +676,10 @@ func requireBodyMatchAccounts(t *testing.T, body *bytes.Buffer, accounts []db.Ac
 	var gotAccounts []db.Account
 	err = json.Unmarshal(data, &gotAccounts)
 	require.NoError(t, err)
-	require.Equal(t, accounts, gotAccounts)
+	for i := range accounts {
+		require.Equal(t, accounts[i].Owner, gotAccounts[i].Owner)
+		require.Equal(t, accounts[i].Currency, gotAccounts[i].Currency)
+		require.Equal(t, accounts[i].CreatedAt, gotAccounts[i].CreatedAt)
+		require.True(t, accounts[i].Balance.Equal(gotAccounts[i].Balance))
+	}
 }

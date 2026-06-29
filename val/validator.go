@@ -4,6 +4,10 @@ import (
 	"fmt"
 	"net/mail"
 	"regexp"
+
+	"github.com/oldlay/simplebank/util"
+
+	decimal "google.golang.org/genproto/googleapis/type/decimal"
 )
 
 var (
@@ -62,4 +66,26 @@ func ValidateEmailId(value int64) error {
 
 func ValidateSecretCode(value string) error {
 	return ValidateString(value, 32, 128)
+}
+
+func ValidateCurrency(currency string) error {
+	if util.IsSupportedCurrency(currency) == false {
+		return fmt.Errorf("must be one of USD, EUR and CAD")
+	}
+	return nil
+}
+
+func ValidateId(id int64) error {
+	if id <= 0 {
+		return fmt.Errorf("must be a positive integer")
+	}
+	return nil
+}
+
+func ValidateAmount(amount *decimal.Decimal) error {
+	_, err := util.ProtoToShopDecimal(amount)
+	if err != nil {
+		return fmt.Errorf("amount must be a valid decimal")
+	}
+	return nil
 }

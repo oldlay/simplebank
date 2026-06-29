@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package pb;
+
+import "account.proto";
+import "google/type/decimal.proto";
+
+option go_package = "github.com/oldlay/simplebank/pb";
+
+message UpdateAccountRequest {
+    int64 id = 1;
+    google.type.Decimal balance = 2;
+    string currency = 3;
+}
+
+message UpdateAccountResponse {
+    Account account = 1;
+}

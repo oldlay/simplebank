@@ -7,12 +7,13 @@
 package pb
 
 import (
+	reflect "reflect"
+	unsafe "unsafe"
+
 	_ "github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2/options"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	reflect "reflect"
-	unsafe "unsafe"
 )
 
 const (
@@ -26,7 +27,7 @@ var File_service_simple_bank_proto protoreflect.FileDescriptor
 
 const file_service_simple_bank_proto_rawDesc = "" +
 	"\n" +
-	"\x19service_simple_bank.proto\x12\x02pb\x1a\x15rpc_create_user.proto\x1a\x14rpc_login_user.proto\x1a\x15rpc_update_user.proto\x1a\x16rpc_verify_email.proto\x1a\x1cgoogle/api/annotations.proto\x1a.protoc-gen-openapiv2/options/annotations.proto2\xe7\x04\n" +
+	"\x19service_simple_bank.proto\x12\x02pb\x1a\x15rpc_create_user.proto\x1a\x14rpc_login_user.proto\x1a\x15rpc_update_user.proto\x1a\x16rpc_verify_email.proto\x1a\x18rpc_create_account.proto\x1a\x15rpc_get_account.proto\x1a\x16rpc_list_account.proto\x1a\x18rpc_update_account.proto\x1a\x18rpc_delete_account.proto\x1a\x19rpc_create_transfer.proto\x1a\x1erpc_get_account_by_owner.proto\x1a\x1brpc_get_exchange_rate.proto\x1a\x1cgoogle/api/annotations.proto\x1a.protoc-gen-openapiv2/options/annotations.proto2\x82\x0f\n" +
 	"\n" +
 	"SimpleBank\x12\x8e\x01\n" +
 	"\n" +
@@ -35,34 +36,75 @@ const file_service_simple_bank_proto_rawDesc = "" +
 	"UpdateUser\x12\x15.pb.UpdateUserRequest\x1a\x16.pb.UpdateUserResponse\"K\x92A.\x12\x0fCreate new user\x1a\x1bUse this API to update user\x82\xd3\xe4\x93\x02\x14:\x01*2\x0f/v1/update_user\x12\xa3\x01\n" +
 	"\tLoginUser\x12\x14.pb.LoginUserRequest\x1a\x15.pb.LoginUserResponse\"i\x92AM\x12\n" +
 	"login user\x1a?Use this API to login user and get access token & refresh token\x82\xd3\xe4\x93\x02\x13:\x01*\"\x0e/v1/login_user\x12\x96\x01\n" +
-	"\vVerifyEmail\x12\x16.pb.VerifyEmailRequest\x1a\x17.pb.VerifyEmailResponse\"V\x92A;\x12\fverify email\x1a+Use this API to verify user's email address\x82\xd3\xe4\x93\x02\x12\x12\x10/v1/verify_emailBv\x92AR\x12P\n" +
+	"\vVerifyEmail\x12\x16.pb.VerifyEmailRequest\x1a\x17.pb.VerifyEmailResponse\"V\x92A;\x12\fverify email\x1a+Use this API to verify user's email address\x82\xd3\xe4\x93\x02\x12\x12\x10/v1/verify_email\x12\xa0\x01\n" +
+	"\rCreateAccount\x12\x18.pb.CreateAccountRequest\x1a\x19.pb.CreateAccountResponse\"Z\x92A:\x12\x12Create new account\x1a$Use this API to create a new account\x82\xd3\xe4\x93\x02\x17:\x01*\"\x12/v1/create_account\x12\x93\x01\n" +
+	"\n" +
+	"GetAccount\x12\x15.pb.GetAccountRequest\x1a\x16.pb.GetAccountResponse\"V\x92A7\x12\x0fGet new account\x1a$Use this API to create a new account\x82\xd3\xe4\x93\x02\x16\x12\x14/v1/get_account/{id}\x12\x95\x01\n" +
+	"\vListAccount\x12\x16.pb.ListAccountRequest\x1a\x17.pb.ListAccountResponse\"U\x92A:\x12\x11list all accounts\x1a%Use this API to list all new accounts\x82\xd3\xe4\x93\x02\x12\x12\x10/v1/list_account\x12\x9f\x01\n" +
+	"\rUpdateAccount\x12\x18.pb.UpdateAccountRequest\x1a\x19.pb.UpdateAccountResponse\"Y\x92A4\x12\x10update a account\x1a Use this API to update a account\x82\xd3\xe4\x93\x02\x1c:\x01*2\x17/v1/update_account/{id}\x12\x9c\x01\n" +
+	"\rDeleteAccount\x12\x18.pb.DeleteAccountRequest\x1a\x19.pb.DeleteAccountResponse\"V\x92A4\x12\x10delete a account\x1a Use this API to delete a account\x82\xd3\xe4\x93\x02\x19*\x17/v1/delete_account/{id}\x12\xa0\x01\n" +
+	"\x0eCreateTransfer\x12\x19.pb.CreateTransferRequest\x1a\x1a.pb.CreateTransferResponse\"W\x92A6\x12\x11create a transfer\x1a!Use this API to create a transfer\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/v1/create_transfer\x12\xb5\x01\n" +
+	"\x11GetAccountByOwner\x12\x1c.pb.GetAccountByOwnerRequest\x1a\x1d.pb.GetAccountByOwnerResponse\"c\x92A@\x12\x14get account by owner\x1a(Look up an account by owner and currency\x82\xd3\xe4\x93\x02\x1a\x12\x18/v1/get_account_by_owner\x12\xab\x01\n" +
+	"\x0fGetExchangeRate\x12\x1a.pb.GetExchangeRateRequest\x1a\x1b.pb.GetExchangeRateResponse\"_\x92AC\x12\x12get exchange rates\x1a-Get real-time exchange rates with USD as base\x82\xd3\xe4\x93\x02\x13\x12\x11/v1/exchange_rateBv\x92AR\x12P\n" +
 	"\x0fSimple Bank API\"8\n" +
 	"\x06oldlay\x12\x19https://github.com/oldlay\x1a\x13oldlay239@gmail.com2\x031.2Z\x1fgithub.com/oldlay/simplebank/pbb\x06proto3"
 
 var file_service_simple_bank_proto_goTypes = []any{
-	(*CreateUserRequest)(nil),   // 0: pb.CreateUserRequest
-	(*UpdateUserRequest)(nil),   // 1: pb.UpdateUserRequest
-	(*LoginUserRequest)(nil),    // 2: pb.LoginUserRequest
-	(*VerifyEmailRequest)(nil),  // 3: pb.VerifyEmailRequest
-	(*CreateUserResponse)(nil),  // 4: pb.CreateUserResponse
-	(*UpdateUserResponse)(nil),  // 5: pb.UpdateUserResponse
-	(*LoginUserResponse)(nil),   // 6: pb.LoginUserResponse
-	(*VerifyEmailResponse)(nil), // 7: pb.VerifyEmailResponse
+	(*CreateUserRequest)(nil),         // 0: pb.CreateUserRequest
+	(*UpdateUserRequest)(nil),         // 1: pb.UpdateUserRequest
+	(*LoginUserRequest)(nil),          // 2: pb.LoginUserRequest
+	(*VerifyEmailRequest)(nil),        // 3: pb.VerifyEmailRequest
+	(*CreateAccountRequest)(nil),      // 4: pb.CreateAccountRequest
+	(*GetAccountRequest)(nil),         // 5: pb.GetAccountRequest
+	(*ListAccountRequest)(nil),        // 6: pb.ListAccountRequest
+	(*UpdateAccountRequest)(nil),      // 7: pb.UpdateAccountRequest
+	(*DeleteAccountRequest)(nil),      // 8: pb.DeleteAccountRequest
+	(*CreateTransferRequest)(nil),     // 9: pb.CreateTransferRequest
+	(*GetAccountByOwnerRequest)(nil),  // 10: pb.GetAccountByOwnerRequest
+	(*GetExchangeRateRequest)(nil),    // 11: pb.GetExchangeRateRequest
+	(*CreateUserResponse)(nil),        // 12: pb.CreateUserResponse
+	(*UpdateUserResponse)(nil),        // 13: pb.UpdateUserResponse
+	(*LoginUserResponse)(nil),         // 14: pb.LoginUserResponse
+	(*VerifyEmailResponse)(nil),       // 15: pb.VerifyEmailResponse
+	(*CreateAccountResponse)(nil),     // 16: pb.CreateAccountResponse
+	(*GetAccountResponse)(nil),        // 17: pb.GetAccountResponse
+	(*ListAccountResponse)(nil),       // 18: pb.ListAccountResponse
+	(*UpdateAccountResponse)(nil),     // 19: pb.UpdateAccountResponse
+	(*DeleteAccountResponse)(nil),     // 20: pb.DeleteAccountResponse
+	(*CreateTransferResponse)(nil),    // 21: pb.CreateTransferResponse
+	(*GetAccountByOwnerResponse)(nil), // 22: pb.GetAccountByOwnerResponse
+	(*GetExchangeRateResponse)(nil),   // 23: pb.GetExchangeRateResponse
 }
 var file_service_simple_bank_proto_depIdxs = []int32{
-	0, // 0: pb.SimpleBank.CreateUser:input_type -> pb.CreateUserRequest
-	1, // 1: pb.SimpleBank.UpdateUser:input_type -> pb.UpdateUserRequest
-	2, // 2: pb.SimpleBank.LoginUser:input_type -> pb.LoginUserRequest
-	3, // 3: pb.SimpleBank.VerifyEmail:input_type -> pb.VerifyEmailRequest
-	4, // 4: pb.SimpleBank.CreateUser:output_type -> pb.CreateUserResponse
-	5, // 5: pb.SimpleBank.UpdateUser:output_type -> pb.UpdateUserResponse
-	6, // 6: pb.SimpleBank.LoginUser:output_type -> pb.LoginUserResponse
-	7, // 7: pb.SimpleBank.VerifyEmail:output_type -> pb.VerifyEmailResponse
-	4, // [4:8] is the sub-list for method output_type
-	0, // [0:4] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	0,  // 0: pb.SimpleBank.CreateUser:input_type -> pb.CreateUserRequest
+	1,  // 1: pb.SimpleBank.UpdateUser:input_type -> pb.UpdateUserRequest
+	2,  // 2: pb.SimpleBank.LoginUser:input_type -> pb.LoginUserRequest
+	3,  // 3: pb.SimpleBank.VerifyEmail:input_type -> pb.VerifyEmailRequest
+	4,  // 4: pb.SimpleBank.CreateAccount:input_type -> pb.CreateAccountRequest
+	5,  // 5: pb.SimpleBank.GetAccount:input_type -> pb.GetAccountRequest
+	6,  // 6: pb.SimpleBank.ListAccount:input_type -> pb.ListAccountRequest
+	7,  // 7: pb.SimpleBank.UpdateAccount:input_type -> pb.UpdateAccountRequest
+	8,  // 8: pb.SimpleBank.DeleteAccount:input_type -> pb.DeleteAccountRequest
+	9,  // 9: pb.SimpleBank.CreateTransfer:input_type -> pb.CreateTransferRequest
+	10, // 10: pb.SimpleBank.GetAccountByOwner:input_type -> pb.GetAccountByOwnerRequest
+	11, // 11: pb.SimpleBank.GetExchangeRate:input_type -> pb.GetExchangeRateRequest
+	12, // 12: pb.SimpleBank.CreateUser:output_type -> pb.CreateUserResponse
+	13, // 13: pb.SimpleBank.UpdateUser:output_type -> pb.UpdateUserResponse
+	14, // 14: pb.SimpleBank.LoginUser:output_type -> pb.LoginUserResponse
+	15, // 15: pb.SimpleBank.VerifyEmail:output_type -> pb.VerifyEmailResponse
+	16, // 16: pb.SimpleBank.CreateAccount:output_type -> pb.CreateAccountResponse
+	17, // 17: pb.SimpleBank.GetAccount:output_type -> pb.GetAccountResponse
+	18, // 18: pb.SimpleBank.ListAccount:output_type -> pb.ListAccountResponse
+	19, // 19: pb.SimpleBank.UpdateAccount:output_type -> pb.UpdateAccountResponse
+	20, // 20: pb.SimpleBank.DeleteAccount:output_type -> pb.DeleteAccountResponse
+	21, // 21: pb.SimpleBank.CreateTransfer:output_type -> pb.CreateTransferResponse
+	22, // 22: pb.SimpleBank.GetAccountByOwner:output_type -> pb.GetAccountByOwnerResponse
+	23, // 23: pb.SimpleBank.GetExchangeRate:output_type -> pb.GetExchangeRateResponse
+	12, // [12:24] is the sub-list for method output_type
+	0,  // [0:12] is the sub-list for method input_type
+	0,  // [0:0] is the sub-list for extension type_name
+	0,  // [0:0] is the sub-list for extension extendee
+	0,  // [0:0] is the sub-list for field type_name
 }
 
 func init() { file_service_simple_bank_proto_init() }
@@ -74,6 +116,14 @@ func file_service_simple_bank_proto_init() {
 	file_rpc_login_user_proto_init()
 	file_rpc_update_user_proto_init()
 	file_rpc_verify_email_proto_init()
+	file_rpc_create_account_proto_init()
+	file_rpc_get_account_proto_init()
+	file_rpc_list_account_proto_init()
+	file_rpc_update_account_proto_init()
+	file_rpc_delete_account_proto_init()
+	file_rpc_create_transfer_proto_init()
+	file_rpc_get_account_by_owner_proto_init()
+	file_rpc_get_exchange_rate_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

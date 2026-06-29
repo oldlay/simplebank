@@ -42,6 +42,13 @@ func (server *Server) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest)
 		},
 	}
 
+	if authoPayload.Role == util.BankerRole {
+		arg.Role = pgtype.Text{
+			String: req.GetRole(),
+			Valid:  req.Role != nil,
+		}
+	}
+
 	if req.Password != nil {
 		hashedPassword, err := util.HashPassword(req.GetPassword())
 		if err != nil {

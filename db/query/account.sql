@@ -41,3 +41,8 @@ RETURNING *;
 -- name: DeleteAccount :exec
 DELETE FROM accounts
 WHERE id = $1;
+
+-- name: GetAccountFromOwner :one
+SELECT id
+FROM accounts
+WHERE owner = sqlc.arg(owner) and currency = sqlc.arg(currency);

@@ -17,7 +17,7 @@ func TestTransferTx(t *testing.T) {
 
 	// run n concurrent transfer transactions
 	n := 5
-	amount := "10"
+	amount := decimal.RequireFromString("10")
 
 	errs := make(chan error)
 	results := make(chan TransferTxResult)
@@ -60,7 +60,7 @@ func TestTransferTx(t *testing.T) {
 		fromEntry := result.FromEntry
 		require.NotEmpty(t, fromEntry)
 		require.Equal(t, account1.ID, fromEntry.AccountID)
-		require.Equal(t, "-"+amount, fromEntry.Amount)
+		require.Equal(t, amount.Neg(), fromEntry.Amount)
 		require.NotZero(t, fromEntry.ID)
 		require.NotZero(t, fromEntry.CreatedAt)
 
@@ -88,12 +88,12 @@ func TestTransferTx(t *testing.T) {
 
 		fmt.Println(">> tx: ", fromAccount.Balance, toAccount.Balance)
 
-		accountBalance1 := String2Decimal(account1.Balance)
-		fromAccountBalance1 := String2Decimal(fromAccount.Balance)
+		accountBalance1 := account1.Balance
+		fromAccountBalance1 := fromAccount.Balance
 		diff1 := accountBalance1.Sub(fromAccountBalance1)
 
-		accountBalance2 := String2Decimal(account2.Balance)
-		toAccountBalance2 := String2Decimal(toAccount.Balance)
+		accountBalance2 := account2.Balance
+		toAccountBalance2 := toAccount.Balance
 		diff2 := toAccountBalance2.Sub(accountBalance2)
 
 		require.Equal(t, diff1.String(), diff2.String())
@@ -114,8 +114,8 @@ func TestTransferTx(t *testing.T) {
 	require.NoError(t, err)
 
 	fmt.Println(">> after: ", updateAccount1.Balance, updateAccount2.Balance)
-	require.Equal(t, String2Decimal(account1.Balance).Sub(decimal.NewFromInt(int64(n*10))).String(), String2Decimal(updateAccount1.Balance).String())
-	require.Equal(t, String2Decimal(account2.Balance).Add(decimal.NewFromInt(int64(n*10))).String(), String2Decimal(updateAccount2.Balance).String())
+	require.Equal(t, account1.Balance.Sub(decimal.NewFromInt(int64(n*10))).String(), updateAccount1.Balance.String())
+	require.Equal(t, account2.Balance.Add(decimal.NewFromInt(int64(n*10))).String(), updateAccount2.Balance.String())
 
 }
 
@@ -127,7 +127,7 @@ func TestTransferTxDeaklock(t *testing.T) {
 
 	// run n concurrent transfer transactions
 	n := 10
-	amount := "10"
+	amount := decimal.RequireFromString("10")
 
 	errs := make(chan error)
 
@@ -165,7 +165,7 @@ func TestTransferTxDeaklock(t *testing.T) {
 	require.NoError(t, err)
 
 	fmt.Println(">> after: ", updateAccount1.Balance, updateAccount2.Balance)
-	require.Equal(t, String2Decimal(account1.Balance).String(), String2Decimal(updateAccount1.Balance).String())
-	require.Equal(t, String2Decimal(account2.Balance).String(), String2Decimal(updateAccount2.Balance).String())
+	require.Equal(t, account1.Balance.String(), updateAccount1.Balance.String())
+	require.Equal(t, account2.Balance.String(), updateAccount2.Balance.String())
 
 }

@@ -1,196 +1,210 @@
-[![GitHub Workflow Status (branch)](https://img.shields.io/github/actions/workflow/status/golang-migrate/migrate/ci.yaml?branch=master)](https://github.com/golang-migrate/migrate/actions/workflows/ci.yaml?query=branch%3Amaster)
-[![GoDoc](https://pkg.go.dev/badge/github.com/golang-migrate/migrate)](https://pkg.go.dev/github.com/golang-migrate/migrate/v4)
-[![Coverage Status](https://img.shields.io/coveralls/github/golang-migrate/migrate/master.svg)](https://coveralls.io/github/golang-migrate/migrate?branch=master)
-[![packagecloud.io](https://img.shields.io/badge/deb-packagecloud.io-844fec.svg)](https://packagecloud.io/golang-migrate/migrate?filter=debs)
-[![Docker Pulls](https://img.shields.io/docker/pulls/migrate/migrate.svg)](https://hub.docker.com/r/migrate/migrate/)
-![Supported Go Versions](https://img.shields.io/badge/Go-1.24%2C%201.25-lightgrey.svg)
-[![GitHub Release](https://img.shields.io/github/release/golang-migrate/migrate.svg)](https://github.com/golang-migrate/migrate/releases)
-[![Go Report Card](https://goreportcard.com/badge/github.com/golang-migrate/migrate/v4)](https://goreportcard.com/report/github.com/golang-migrate/migrate/v4)
+# Simple Bank
 
-# migrate
+A full-stack banking web application built with Go, gRPC, and Vue 3. Provides user management, account operations, money transfers, and email verification — all served through a gRPC API with a RESTful HTTP gateway.
 
-__Database migrations written in Go. Use as [CLI](#cli-usage) or import as [library](#use-in-your-go-project).__
+## Architecture Overview
 
-* Migrate reads migrations from [sources](#migration-sources)
-   and applies them in correct order to a [database](#databases).
-* Drivers are "dumb", migrate glues everything together and makes sure the logic is bulletproof.
-   (Keeps the drivers lightweight, too.)
-* Database drivers don't assume things or try to correct user input. When in doubt, fail.
+```text
+Client (Vue 3 + PrimeVue)
+        │
+        ▼
+┌───────────────────────────────┐
+│  HTTP Gateway (gRPC-Gateway)  │  :8080
+│  Swagger UI                   │
+└───────────┬───────────────────┘
+            │
+            ▼
+┌───────────────────────────────┐
+│       gRPC Server             │  :9090
+│  (auth, accounts, transfers)  │
+└──────┬────────────┬───────────┘
+       │            │
+       ▼            ▼
+┌──────────┐  ┌──────────┐
+│PostgreSQL│  │  Redis   │
+│          │  │ (Asynq)  │
+└──────────┘  └──────────┘
+```
 
-Forked from [mattes/migrate](https://github.com/mattes/migrate)
+## Tech Stack
 
-## Databases
+### Backend
 
-Database drivers run migrations. [Add a new database?](database/driver.go)
+- **Language:** Go 1.26
+- **API:** gRPC + gRPC-Gateway (RESTful HTTP)
+- **Database:** PostgreSQL 18 with [pgx](https://github.com/jackc/pgx) driver
+- **SQL Generation:** [sqlc](https://sqlc.dev/) — type-safe Go code from SQL
+- **Migrations:** [golang-migrate](https://github.com/golang-migrate/migrate)
+- **Authentication:** JWT (HMAC-SHA256) & PASETO tokens
+- **Async Tasks:** [Asynq](https://github.com/hibiken/asynq) (Redis-backed task queue)
+- **Email:** Google Gmail SMTP via [jordan-wright/email](https://github.com/jordan-wright/email)
+- **Configuration:** [Viper](https://github.com/spf13/viper)
+- **Logging:** [zerolog](https://github.com/rs/zerolog)
+- **API Docs:** Protocol Buffers → OpenAPI v2 (Swagger)
 
-* [PostgreSQL](database/postgres)
-* [PGX v4](database/pgx)
-* [PGX v5](database/pgx/v5)
-* [Redshift](database/redshift)
-* [Ql](database/ql)
-* [Cassandra / ScyllaDB](database/cassandra)
-* [SQLite](database/sqlite)
-* [SQLite3](database/sqlite3) ([todo #165](https://github.com/mattes/migrate/issues/165))
-* [SQLCipher](database/sqlcipher)
-* [MySQL / MariaDB](database/mysql)
-* [Neo4j](database/neo4j)
-* [MongoDB](database/mongodb)
-* [CrateDB](database/crate) ([todo #170](https://github.com/mattes/migrate/issues/170))
-* [Shell](database/shell) ([todo #171](https://github.com/mattes/migrate/issues/171))
-* [Google Cloud Spanner](database/spanner)
-* [CockroachDB](database/cockroachdb)
-* [YugabyteDB](database/yugabytedb)
-* [ClickHouse](database/clickhouse)
-* [Firebird](database/firebird)
-* [MS SQL Server](database/sqlserver)
-* [rqlite](database/rqlite)
+### Frontend
 
-### Database URLs
+- **Framework:** Vue 3 (Composition API) + TypeScript
+- **Build:** Vite 8
+- **UI Library:** PrimeVue 4 + PrimeFlex
+- **HTTP Client:** Axios
+- **Routing:** Vue Router 5
 
-Database connection strings are specified via URLs. The URL format is driver dependent but generally has the form: `dbdriver://username:password@host:port/dbname?param1=true&param2=false`
+## Features
 
-Any [reserved URL characters](https://en.wikipedia.org/wiki/Percent-encoding#Percent-encoding_reserved_characters) need to be escaped. Note, the `%` character also [needs to be escaped](https://en.wikipedia.org/wiki/Percent-encoding#Percent-encoding_the_percent_character)
+- **User Management** — Sign up, login, update profile, role-based authorization
+- **Account Management** — Create, list, get, update, and delete bank accounts
+- **Money Transfers** — Transfer funds between accounts with transactional integrity
+- **Email Verification** — Async email verification via Redis task queue
+- **Exchange Rates** — Real-time currency exchange rate lookup
+- **JWT & PASETO Auth** — Dual token system with access + refresh tokens
+- **Swagger UI** — Auto-generated API documentation served at `/swagger/`
 
-Explicitly, the following characters need to be escaped:
-`!`, `#`, `$`, `%`, `&`, `'`, `(`, `)`, `*`, `+`, `,`, `/`, `:`, `;`, `=`, `?`, `@`, `[`, `]`
+## Project Structure
 
-It's easiest to always run the URL parts of your DB connection URL (e.g. username, password, etc) through an URL encoder. See the example Python snippets below:
+```text
+.
+├── main.go                  # Application entry point
+├── api/                     # Gin HTTP handlers (legacy, optional)
+├── gapi/                    # gRPC server & RPC implementations
+├── db/
+│   ├── migration/           # Database migration files (up/down SQL)
+│   ├── query/               # Raw SQL queries for sqlc
+│   └── sqlc/                # Generated type-safe Go code from SQL
+├── proto/                   # Protocol Buffer definitions
+├── pb/                      # Generated protobuf Go code
+├── token/                   # JWT & PASETO token makers
+├── util/                    # Config, password hashing, random generators
+├── worker/                  # Asynq task processor & distributor
+├── mail/                    # Email sender (Gmail)
+├── doc/
+│   ├── swagger/             # Swagger UI & OpenAPI spec
+│   ├── statik/              # Embedded static files
+│   ├── db.dbml              # DBML database documentation
+│   └── schema.sql           # Generated SQL schema
+├── frontend/                # Vue 3 frontend application
+├── Dockerfile               # Multi-stage Docker build
+├── docker-compose.yaml      # PostgreSQL + Redis + API services
+├── Makefile                 # Dev workflow shortcuts
+└── app.env                  # Environment configuration
+```
+
+## Getting Started
+
+### Prerequisites
+
+- Go 1.26+
+- Node.js 22+ (for frontend)
+- PostgreSQL 18+
+- Redis 8+
+- [migrate CLI](https://github.com/golang-migrate/migrate/tree/master/cmd/migrate)
+- [sqlc](https://sqlc.dev/)
+- [protoc](https://grpc.io/docs/protoc-installation/) + plugins
+
+### Quick Start with Docker
 
 ```bash
-$ python3 -c 'import urllib.parse; print(urllib.parse.quote(input("String to encode: "), ""))'
-String to encode: FAKEpassword!#$%&'()*+,/:;=?@[]
-FAKEpassword%21%23%24%25%26%27%28%29%2A%2B%2C%2F%3A%3B%3D%3F%40%5B%5D
-$ python2 -c 'import urllib; print urllib.quote(raw_input("String to encode: "), "")'
-String to encode: FAKEpassword!#$%&'()*+,/:;=?@[]
-FAKEpassword%21%23%24%25%26%27%28%29%2A%2B%2C%2F%3A%3B%3D%3F%40%5B%5D
-$
+docker compose up
 ```
 
-## Migration Sources
+This starts PostgreSQL, Redis, and the API server. The API will be available at:
 
-Source drivers read migrations from local or remote sources. [Add a new source?](source/driver.go)
+- HTTP Gateway: `http://localhost:8080`
+- gRPC Server: `localhost:9090`
 
-* [Filesystem](source/file) - read from filesystem
-* [io/fs](source/iofs) - read from a Go [io/fs](https://pkg.go.dev/io/fs#FS)
-* [Go-Bindata](source/go_bindata) - read from embedded binary data ([jteeuwen/go-bindata](https://github.com/jteeuwen/go-bindata))
-* [pkger](source/pkger) - read from embedded binary data ([markbates/pkger](https://github.com/markbates/pkger))
-* [GitHub](source/github) - read from remote GitHub repositories
-* [GitHub Enterprise](source/github_ee) - read from remote GitHub Enterprise repositories
-* [Bitbucket](source/bitbucket) - read from remote Bitbucket repositories
-* [Gitlab](source/gitlab) - read from remote Gitlab repositories
-* [AWS S3](source/aws_s3) - read from Amazon Web Services S3
-* [Google Cloud Storage](source/google_cloud_storage) - read from Google Cloud Platform Storage
+### Manual Setup
 
-## CLI usage
+1. **Start infrastructure**
 
-* Simple wrapper around this library.
-* Handles ctrl+c (SIGINT) gracefully.
-* No config search paths, no config files, no magic ENV var injections.
+   ```bash
+   make postgres    # Start PostgreSQL container
+   make redis       # Start Redis container
+   make createdb    # Create the database
+   ```
 
-[CLI Documentation](cmd/migrate) (includes CLI install instructions)
+1. **Run database migrations**
 
-### Basic usage
+   ```bash
+   make migrateup
+   ```
+
+1. **Start the server**
+
+   ```bash
+   make server
+   ```
+
+1. **Start the frontend** (in a separate terminal)
+
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+
+## Configuration
+
+Configuration is loaded from `app.env` via Viper. Key settings:
+
+| Variable | Description | Default |
+|---|---|---|
+| `ENVIRONMENT` | `development` or `production` | `development` |
+| `DB_SOURCE` | PostgreSQL connection string | `postgresql://root:...@localhost:5432/simple_bank` |
+| `MIGRATION_URL` | Migration files location | `file://db/migration` |
+| `HTTP_SERVER_ADDRESS` | HTTP gateway listen address | `0.0.0.0:8080` |
+| `GRPC_SERVER_ADDRESS` | gRPC server listen address | `0.0.0.0:9090` |
+| `TOKEN_SYMMETRIC_KEY` | Symmetric key for PASETO/JWT | (32-char hex string) |
+| `ACCESS_TOKEN_DURATION` | Access token TTL | `15m` |
+| `REDIS_ADDRESS` | Redis server address | `0.0.0.0:6379` |
+| `EXCHANGE_API` | Exchange rate API endpoint | exchangerate-api.com |
+
+## Makefile Targets
+
+| Command | Description |
+|---|---|
+| `make postgres` | Start PostgreSQL via Docker |
+| `make createdb` | Create the application database |
+| `make migrateup` | Run all pending migrations |
+| `make migratedown` | Rollback all migrations |
+| `make sqlc` | Generate Go code from SQL queries |
+| `make proto` | Generate protobuf & gRPC code |
+| `make test` | Run all tests with coverage |
+| `make server` | Start the application |
+| `make mock` | Generate mock implementations for testing |
+| `make redis` | Start Redis via Docker |
+
+## API Documentation
+
+Swagger UI is available at `http://localhost:8080/swagger/` when the server is running.
+
+### gRPC Services
+
+Defined in [proto/service_simple_bank.proto](proto/service_simple_bank.proto):
+
+- `CreateUser` / `LoginUser` / `UpdateUser` / `VerifyEmail`
+- `CreateAccount` / `GetAccount` / `ListAccount` / `UpdateAccount` / `DeleteAccount`
+- `CreateTransfer`
+- `GetExchangeRate`
+
+## Database
+
+### Schema
+
+- **accounts** — Bank accounts with owner, currency, and balance
+- **users** — Application users with hashed passwords and roles
+- **transfers** — Money transfer records between accounts
+- **entries** — Double-entry bookkeeping ledger
+- **sessions** — User session records for refresh tokens
+- **verify_emails** — Email verification codes and status
+
+See [doc/db.dbml](doc/db.dbml) for the DBML diagram and [doc/schema.sql](doc/schema.sql) for the full SQL schema.
+
+### Creating New Migrations
 
 ```bash
-$ migrate -source file://path/to/migrations -database postgres://localhost:5432/database up 2
+make new_migration name=your_migration_name
 ```
 
-### Docker usage
+## License
 
-```bash
-$ docker run -v {{ migration dir }}:/migrations --network host migrate/migrate
-    -path=/migrations/ -database postgres://localhost:5432/database up 2
-```
-
-## Use in your Go project
-
-* API is stable and frozen for this release (v3 & v4).
-* Uses [Go modules](https://golang.org/cmd/go/#hdr-Modules__module_versions__and_more) to manage dependencies.
-* To help prevent database corruptions, it supports graceful stops via `GracefulStop chan bool`.
-* Bring your own logger.
-* Uses `io.Reader` streams internally for low memory overhead.
-* Thread-safe and no goroutine leaks.
-
-__[Go Documentation](https://pkg.go.dev/github.com/golang-migrate/migrate/v4)__
-
-```go
-import (
-    "github.com/golang-migrate/migrate/v4"
-    _ "github.com/golang-migrate/migrate/v4/database/postgres"
-    _ "github.com/golang-migrate/migrate/v4/source/github"
-)
-
-func main() {
-    m, err := migrate.New(
-        "github://mattes:personal-access-token@mattes/migrate_test",
-        "postgres://localhost:5432/database?sslmode=enable")
-    m.Steps(2)
-}
-```
-
-Want to use an existing database client?
-
-```go
-import (
-    "database/sql"
-    _ "github.com/lib/pq"
-    "github.com/golang-migrate/migrate/v4"
-    "github.com/golang-migrate/migrate/v4/database/postgres"
-    _ "github.com/golang-migrate/migrate/v4/source/file"
-)
-
-func main() {
-    db, err := sql.Open("postgres", "postgres://localhost:5432/database?sslmode=enable")
-    driver, err := postgres.WithInstance(db, &postgres.Config{})
-    m, err := migrate.NewWithDatabaseInstance(
-        "file:///migrations",
-        "postgres", driver)
-    m.Up() // or m.Steps(2) if you want to explicitly set the number of migrations to run
-}
-```
-
-## Getting started
-
-Go to [getting started](GETTING_STARTED.md)
-
-## Tutorials
-
-* [CockroachDB](database/cockroachdb/TUTORIAL.md)
-* [PostgreSQL](database/postgres/TUTORIAL.md)
-
-(more tutorials to come)
-
-## Migration files
-
-Each migration has an up and down migration. [Why?](FAQ.md#why-two-separate-files-up-and-down-for-a-migration)
-
-```bash
-1481574547_create_users_table.up.sql
-1481574547_create_users_table.down.sql
-```
-
-[Best practices: How to write migrations.](MIGRATIONS.md)
-
-## Coming from another db migration tool?
-
-Check out [migradaptor](https://github.com/musinit/migradaptor/).
-*Note: migradaptor is not affiliated or supported by this project*
-
-## Versions
-
-Version | Supported? | Import | Notes
---------|------------|--------|------
-**master** | :white_check_mark: | `import "github.com/golang-migrate/migrate/v4"` | New features and bug fixes arrive here first |
-**v4** | :white_check_mark: | `import "github.com/golang-migrate/migrate/v4"` | Used for stable releases |
-**v3** | :x: | `import "github.com/golang-migrate/migrate"` (with package manager) or `import "gopkg.in/golang-migrate/migrate.v3"` (not recommended) | **DO NOT USE** - No longer supported |
-
-## Development and Contributing
-
-Yes, please! [`Makefile`](Makefile) is your friend,
-read the [development guide](CONTRIBUTING.md).
-
-Also have a look at the [FAQ](FAQ.md).
-
----
-
-Looking for alternatives? [https://awesome-go.com/#database](https://awesome-go.com/#database).
+[MIT](LICENSE)

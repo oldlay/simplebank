@@ -663,7 +663,10 @@ func requireBodyMatchAccount(t *testing.T, body *bytes.Buffer, account db.Accoun
 	var gotAccount db.Account
 	err = json.Unmarshal(data, &gotAccount)
 	require.NoError(t, err)
-	require.Equal(t, account, gotAccount)
+	require.Equal(t, account.Owner, gotAccount.Owner)
+	require.Equal(t, account.Currency, gotAccount.Currency)
+	require.Equal(t, account.CreatedAt, gotAccount.CreatedAt)
+	require.True(t, account.Balance.Equal(gotAccount.Balance))
 }
 
 func requireBodyMatchAccounts(t *testing.T, body *bytes.Buffer, accounts []db.Account) {

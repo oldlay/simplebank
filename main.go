@@ -25,7 +25,26 @@ import (
 	"github.com/oldlay/simplebank/gapi"
 	"github.com/oldlay/simplebank/mail"
 	"github.com/oldlay/simplebank/pb"
+	_ "github.com/oldlay/simplebank/doc/statik" // Replace with the absolute import path
+	"github.com/oldlay/simplebank/gapi"
+	"github.com/oldlay/simplebank/mail"
+	"github.com/oldlay/simplebank/pb"
 	"github.com/oldlay/simplebank/util"
+	"github.com/oldlay/simplebank/worker"
+	"github.com/rakyll/statik/fs"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
+	"golang.org/x/sync/errgroup"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
+	"google.golang.org/protobuf/encoding/protojson"
+)
+
+var interruptSignals = []os.Signal{
+	os.Interrupt,
+	syscall.SIGTERM,
+	syscall.SIGINT,
+}
 	"github.com/oldlay/simplebank/worker"
 	"github.com/rakyll/statik/fs"
 	"github.com/rs/zerolog"
@@ -51,7 +70,16 @@ func main() {
 
 	if config.Environment == "development" {
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+		log.Fatal().Err(err).Msg("cannot load config")
 	}
+
+	if config.Environment == "development" {
+		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	}
+
+	//when one signal arrival, ctx will done
+	ctx, stop := signal.NotifyContext(context.Background(), interruptSignals...)
+	defer stop()
 
 	//when one signal arrival, ctx will done
 	ctx, stop := signal.NotifyContext(context.Background(), interruptSignals...)
@@ -71,7 +99,10 @@ func main() {
 
 	if err != nil {
 		log.Fatal().Err(err).Msg("cannot connect to db")
+		log.Fatal().Err(err).Msg("cannot connect to db")
 	}
+
+	runDBMigration(config.MigrationURL, config.DBSource)
 
 	runDBMigration(config.MigrationURL, config.DBSource)
 
